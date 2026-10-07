@@ -25,7 +25,7 @@ class TodayScreen extends StatelessWidget {
         Card(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(20, 12, 20, 20),
-            child: WordDetails(word, hanziSize: 112),
+            child: TapRevealCard(word),
           ),
         ),
         const SizedBox(height: 16),

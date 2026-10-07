@@ -45,4 +45,28 @@ void main() {
     expect(find.text('Какой у вас уровень?'), findsOneWidget);
     expect(find.byType(Card), findsNWidgets(4));
   });
+
+  testWidgets('иероглиф дня открывается в два касания', (tester) async {
+    tester.view.physicalSize = const Size(1080, 2400);
+    tester.view.devicePixelRatio = 2.6;
+    addTearDown(tester.view.reset);
+    SharedPreferences.setMockInitialValues({'onboarded': true});
+    final state = (await tester.runAsync(AppState.load))!;
+    final w = state.wordOfTheDay(DateTime.now());
+    await tester.pumpWidget(XueziApp(state: state));
+    await tester.pumpAndSettle();
+
+    expect(find.text(w.pinyin), findsNothing);
+    expect(find.text(w.example), findsNothing);
+
+    await tester.tap(find.text(w.hanzi).first);
+    await tester.pumpAndSettle();
+    expect(find.text(w.example), findsOneWidget);
+    expect(find.text(w.pinyin), findsNothing);
+
+    await tester.tap(find.text(w.hanzi).first);
+    await tester.pumpAndSettle();
+    expect(find.text(w.pinyin), findsOneWidget);
+    expect(find.text(w.meaning), findsOneWidget);
+  });
 }

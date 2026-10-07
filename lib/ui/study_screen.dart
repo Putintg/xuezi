@@ -20,7 +20,7 @@ class _StudyScreenState extends State<StudyScreen> {
   late final List<Word> _queue;
   late final int _total;
   int _done = 0;
-  bool _revealed = false;
+  Reveal _reveal = Reveal.hanzi;
 
   @override
   void initState() {
@@ -40,6 +40,13 @@ class _StudyScreenState extends State<StudyScreen> {
     return '${(d / 365).toStringAsFixed(1)} г';
   }
 
+  /// Касание открывает карточку по шагам: пример, затем пиньинь и перевод.
+  void _advance() {
+    if (_reveal == Reveal.full || _queue.isEmpty) return;
+    setState(() => _reveal = Reveal.values[_reveal.index + 1]);
+    if (_reveal == Reveal.full) Speech.say(_queue.first.hanzi);
+  }
+
   Future<void> _answer(Grade g) async {
     final w = _queue.removeAt(0);
     await widget.state.answer(w, g);
@@ -49,7 +56,7 @@ class _StudyScreenState extends State<StudyScreen> {
       } else {
         _done++;
       }
-      _revealed = false;
+      _reveal = Reveal.hanzi;
     });
   }
 
@@ -98,48 +105,33 @@ class _StudyScreenState extends State<StudyScreen> {
         Expanded(
           child: GestureDetector(
             behavior: HitTestBehavior.opaque,
-            onTap: () {
-              if (!_revealed) {
-                setState(() => _revealed = true);
-                Speech.say(w.hanzi);
-              }
-            },
+            onTap: _advance,
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(16),
-              child: Card(
-                child: Padding(
-                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
-                  child: _revealed
-                      ? WordDetails(w, hanziSize: 104)
-                      : Column(
-                          children: [
-                            Row(children: [
-                              LevelBadge(w.level),
-                              const Spacer(),
-                              if (isNew)
-                                Text('новое',
-                                    style: t.labelMedium
-                                        ?.copyWith(color: Palette.cinnabar)),
-                            ]),
-                            const SizedBox(height: 40),
-                            Text(w.hanzi, style: hanziStyle(120)),
-                            const SizedBox(height: 40),
-                            Text('Вспомните чтение и значение,\nзатем коснитесь карточки',
-                                textAlign: TextAlign.center,
-                                style: t.bodyMedium?.copyWith(
-                                    color: Theme.of(context)
-                                        .colorScheme
-                                        .onSurfaceVariant)),
-                          ],
-                        ),
-                ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (isNew)
+                    Padding(
+                      padding: const EdgeInsets.only(bottom: 8, left: 4),
+                      child: Text('Новое слово',
+                          style: t.labelLarge
+                              ?.copyWith(color: Palette.cinnabar)),
+                    ),
+                  Card(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+                      child: WordDetails(w, hanziSize: 112, reveal: _reveal),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
-          child: _revealed
+          child: _reveal == Reveal.full
               ? Row(
                   children: [
                     for (final (g, label, color) in [
@@ -170,11 +162,10 @@ class _StudyScreenState extends State<StudyScreen> {
               : FilledButton(
                   style: FilledButton.styleFrom(
                       minimumSize: const Size.fromHeight(52)),
-                  onPressed: () {
-                    setState(() => _revealed = true);
-                    Speech.say(w.hanzi);
-                  },
-                  child: const Text('Показать ответ'),
+                  onPressed: _advance,
+                  child: Text(_reveal == Reveal.hanzi
+                      ? 'Показать пример'
+                      : 'Показать пиньинь и перевод'),
                 ),
         ),
       ],

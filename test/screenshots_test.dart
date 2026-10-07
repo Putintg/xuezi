@@ -77,7 +77,9 @@ void main() {
         home: StudyScreen(state: s)));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/3_card_front.png'));
-    await tester.tap(find.text('Показать ответ'));
+    await tester.tap(find.text('Показать пример'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Показать пиньинь и перевод'));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/4_card_back.png'));
   });
