@@ -13,9 +13,11 @@ class Palette {
     Color(0xFF3B6EA8),
     Color(0xFFB7791F),
     Color(0xFFC0392B),
+    Color(0xFF7B4FA0),
+    Color(0xFF4A4A4A),
   ];
 
-  static Color level(int l) => levelColors[(l - 1).clamp(0, 3)];
+  static Color level(int l) => levelColors[(l - 1).clamp(0, levelColors.length - 1)];
 }
 
 ThemeData buildTheme(Brightness b) {
@@ -44,3 +46,11 @@ TextStyle hanziStyle(double size, {Color? color}) => TextStyle(
       fontWeight: FontWeight.w400,
       fontFamilyFallback: const ['Noto Serif CJK SC', 'Noto Sans CJK SC'],
     );
+
+/// Русское множественное число: plural(1, 'карточка', 'карточки', 'карточек').
+String plural(int n, String one, String few, String many) {
+  final m10 = n % 10, m100 = n % 100;
+  if (m10 == 1 && m100 != 11) return '$n $one';
+  if (m10 >= 2 && m10 <= 4 && (m100 < 12 || m100 > 14)) return '$n $few';
+  return '$n $many';
+}

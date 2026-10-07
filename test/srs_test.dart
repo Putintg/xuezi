@@ -43,11 +43,11 @@ void main() {
     expect(back.ease, s.ease);
   });
 
-  test('словарь: 4 уровня HSK, у каждого слова есть перевод и пример', () {
+  test('словарь: 6 уровней HSK 3.0, у каждого слова есть перевод и пример', () {
     final words =
         jsonDecode(File('assets/words.json').readAsStringSync()) as List;
-    expect(words.length, greaterThan(1100));
-    expect(words.map((w) => w['l']).toSet(), {1, 2, 3, 4});
+    expect(words.length, greaterThan(5000));
+    expect(words.map((w) => w['l']).toSet(), {1, 2, 3, 4, 5, 6});
     for (final w in words) {
       expect((w['ru'] as String).isNotEmpty, true, reason: '${w['h']}');
       expect((w['ex'] as String).contains(w['h'] as String), true,

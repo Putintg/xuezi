@@ -34,7 +34,7 @@ class ProgressScreen extends StatelessWidget {
             padding: const EdgeInsets.all(16),
             child: Column(
               children: [
-                for (var l = 1; l <= 4; l++) _levelBar(context, l),
+                for (var l = 1; l <= 6; l++) _levelBar(context, l),
               ],
             ),
           ),

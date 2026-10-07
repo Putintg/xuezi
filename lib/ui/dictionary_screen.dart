@@ -47,7 +47,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
           child: Row(
             children: [
               _chip('Все', null),
-              for (var l = 1; l <= 4; l++) _chip('HSK $l', l),
+              for (var l = 1; l <= 6; l++) _chip('HSK $l', l),
             ],
           ),
         ),

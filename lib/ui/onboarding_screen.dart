@@ -20,10 +20,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
   int _perDay = 5;
 
   static const _levelHints = {
-    1: 'Начинаю с нуля',
-    2: 'Знаю пару сотен слов',
-    3: 'Читаю простые тексты',
-    4: 'Уверенный средний уровень',
+    1: 'Начинаю с нуля · 300 слов',
+    2: 'Знаю базовые слова · 200 слов',
+    3: 'Читаю простые тексты · 500 слов',
+    4: 'Средний уровень · 1000 слов',
+    5: 'Выше среднего · 1550 слов',
+    6: 'Продвинутый · 1700 слов',
   };
 
   void _next() => _pages.nextPage(
@@ -95,7 +97,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         children: [
           Text('Какой у вас уровень?', style: t.headlineSmall),
           const SizedBox(height: 16),
-          for (var l = 1; l <= 4; l++)
+          for (var l = 1; l <= 6; l++)
             Card(
               shape: RoundedRectangleBorder(
                 borderRadius: BorderRadius.circular(16),

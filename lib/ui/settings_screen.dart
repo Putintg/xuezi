@@ -28,7 +28,7 @@ class SettingsScreen extends StatelessWidget {
               subtitle: Wrap(
                 spacing: 8,
                 children: [
-                  for (var l = 1; l <= 4; l++)
+                  for (var l = 1; l <= 6; l++)
                     FilterChip(
                       label: Text('HSK $l'),
                       selected: state.levels.contains(l),

@@ -45,7 +45,8 @@ void main() {
     await tester.tap(find.text('Далее'));
     await tester.pumpAndSettle();
     expect(find.text('Какой у вас уровень?'), findsOneWidget);
-    expect(find.byType(Card), findsNWidgets(4));
+    expect(find.text('HSK 1'), findsOneWidget);
+    expect(find.text('HSK 6', skipOffstage: false), findsOneWidget);
   });
 
   testWidgets('иероглиф дня открывается в два касания', (tester) async {

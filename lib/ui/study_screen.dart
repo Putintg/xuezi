@@ -91,7 +91,7 @@ class _StudyScreenState extends State<StudyScreen> {
             children: [
               Text('好!', style: hanziStyle(72, color: Palette.cinnabar)),
               const SizedBox(height: 12),
-              Text('Занятие окончено: $_done карточек',
+              Text('Занятие окончено: ${plural(_done, 'карточка', 'карточки', 'карточек')}',
                   style: Theme.of(context).textTheme.titleMedium),
               const SizedBox(height: 24),
               FilledButton(

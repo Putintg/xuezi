@@ -76,7 +76,7 @@ class TodayScreen extends StatelessWidget {
                 icon: Icons.replay_rounded,
                 title: reviewDone
                     ? 'Повторение на сегодня сделано'
-                    : 'Повторение · ${queue.length} карточек',
+                    : 'Повторение · ${plural(queue.length, 'карточка', 'карточки', 'карточек')}',
                 subtitle: reviewDone
                     ? null
                     : 'Слова, которые пора освежить, и новые',
@@ -94,7 +94,7 @@ class TodayScreen extends StatelessWidget {
                       : 'Домашнее задание: прописи',
                   subtitle: hwDone
                       ? null
-                      : '${state.homeworkChars.join(' ')} · каждый ${state.homeworkRepeats} раза',
+                      : '${state.homeworkChars.join(' ')} · каждый ${plural(state.homeworkRepeats, 'раз', 'раза', 'раз')}',
                   onTap: hwDone
                       ? null
                       : () => _push(

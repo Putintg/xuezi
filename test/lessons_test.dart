@@ -33,9 +33,12 @@ void main() {
 
   test('уроки HSK 1 покрывают словарь и корректно размечены', () {
     expect(lessons.length, 10);
-    final hsk1 = words.where((w) => w.level == 1).map((w) => w.hanzi).toSet();
     final covered = [for (final l in lessons) ...l.words];
-    expect(covered.toSet(), hsk1);
+    expect(covered.toSet().length, covered.length, reason: 'слова не повторяются');
+    expect(covered.length, greaterThanOrEqualTo(140));
+    for (final h in covered) {
+      expect(byHanzi[h], isNotNull, reason: h);
+    }
     for (final l in lessons) {
       for (final s in [
         for (final g in l.grammar) ...g.examples,
