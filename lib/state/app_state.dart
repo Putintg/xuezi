@@ -5,6 +5,7 @@ import 'package:flutter/services.dart' show rootBundle;
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../data/word.dart';
+import '../lessons/lesson.dart';
 import '../srs/srs.dart';
 
 String dayKey(DateTime t) =>
@@ -16,6 +17,9 @@ class AppState extends ChangeNotifier {
 
   final SharedPreferences _prefs;
   List<Word> words = [];
+  List<Lesson> lessons = [];
+  Set<String> completedLessons = {};
+  final Map<String, Word> _byHanzi = {};
   final Map<int, CardState> cards = {};
 
   bool onboarded = false;
@@ -45,6 +49,18 @@ class AppState extends ChangeNotifier {
       for (var i = 0; i < list.length; i++)
         Word.fromJson(i, list[i] as Map<String, dynamic>)
     ];
+    for (final w in s.words) {
+      s._byHanzi.putIfAbsent(w.hanzi, () => w);
+    }
+    try {
+      final raw = await rootBundle.loadString('assets/lessons/hsk1.json');
+      s.lessons = [
+        for (final l in jsonDecode(raw) as List)
+          Lesson.fromJson(l as Map<String, dynamic>, level: 1)
+      ];
+    } catch (_) {
+      // Уроков может не быть — приложение работает и без них.
+    }
     s._restore();
     return s;
   }
@@ -54,6 +70,7 @@ class AppState extends ChangeNotifier {
     levels = (_prefs.getStringList('levels') ?? ['1']).map(int.parse).toSet();
     dailyNew = _prefs.getInt('dailyNew') ?? 5;
     studyDays = (_prefs.getStringList('studyDays') ?? []).toSet();
+    completedLessons = (_prefs.getStringList('lessonsDone') ?? []).toSet();
     lockEnabled = _prefs.getBool('lockEnabled') ?? true;
     lockEveryMinutes = _prefs.getInt('lockEvery') ?? 120;
     lockStartHour = _prefs.getInt('lockStart') ?? 9;
@@ -180,6 +197,49 @@ class AppState extends ChangeNotifier {
     if (wasNew) _newToday++;
     reviewedToday++;
     studyDays.add(dayKey(now));
+    await _save();
+    notifyListeners();
+    onLockscreenDataChanged?.call();
+  }
+
+  // ---------- Уроки ----------
+
+  /// Слова урока: из словаря HSK и дополнительные слова урока.
+  List<Word> lessonWords(Lesson l) => [
+        for (final h in l.words)
+          if (_byHanzi[h] != null) _byHanzi[h]!,
+        for (var i = 0; i < l.extraWords.length; i++)
+          Word(
+            id: -1 - i,
+            hanzi: l.extraWords[i].hanzi,
+            traditional: l.extraWords[i].hanzi,
+            pinyin: l.extraWords[i].pinyin,
+            ru: l.extraWords[i].ru,
+            en: '',
+            level: l.level,
+            example: '',
+            examplePinyin: '',
+            exampleRu: '',
+          ),
+      ];
+
+  Word? wordByHanzi(String h) => _byHanzi[h];
+
+  /// Урок открыт, если пройден предыдущий.
+  bool isLessonOpen(Lesson l) {
+    final i = lessons.indexOf(l);
+    return i <= 0 || completedLessons.contains(lessons[i - 1].key);
+  }
+
+  /// Пройденный урок отправляет свои слова в повторение.
+  Future<void> completeLesson(Lesson l) async {
+    final now = DateTime.now();
+    for (final w in lessonWords(l)) {
+      if (w.id >= 0) cards.putIfAbsent(w.id, () => CardState(due: now));
+    }
+    completedLessons.add(l.key);
+    studyDays.add(dayKey(now));
+    await _prefs.setStringList('lessonsDone', completedLessons.toList());
     await _save();
     notifyListeners();
     onLockscreenDataChanged?.call();

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'services/lockscreen.dart';
 import 'state/app_state.dart';
 import 'ui/dictionary_screen.dart';
+import 'ui/lessons_screen.dart';
 import 'ui/onboarding_screen.dart';
 import 'ui/progress_screen.dart';
 import 'ui/settings_screen.dart';
@@ -83,9 +84,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   Widget build(BuildContext context) {
-    const titles = ['Сегодня', 'Словарь', 'Прогресс'];
+    const titles = ['Сегодня', 'Уроки', 'Словарь', 'Прогресс'];
     final pages = [
       TodayScreen(state: widget.state),
+      LessonsScreen(state: widget.state),
       DictionaryScreen(state: widget.state),
       ProgressScreen(state: widget.state),
     ];
@@ -108,6 +110,8 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
         destinations: const [
           NavigationDestination(
               icon: Icon(Icons.wb_sunny_outlined), label: 'Сегодня'),
+          NavigationDestination(
+              icon: Icon(Icons.school_outlined), label: 'Уроки'),
           NavigationDestination(
               icon: Icon(Icons.menu_book_outlined), label: 'Словарь'),
           NavigationDestination(
