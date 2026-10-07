@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg"
+    android:gravity="center"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <TextView
+        android:id="@+id/widget_hanzi"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:autoSizeTextType="uniform"
+        android:maxLines="1"
+        android:text="学"
+        android:textColor="#1F1B16"
+        android:textSize="56sp" />
+
+    <TextView
+        android:id="@+id/widget_pinyin"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:maxLines="1"
+        android:text="xué"
+        android:textColor="#C0392B"
+        android:textSize="16sp" />
+
+    <TextView
+        android:id="@+id/widget_meaning"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:ellipsize="end"
+        android:gravity="center"
+        android:maxLines="2"
+        android:text="учиться"
+        android:textColor="#7A6F63"
+        android:textSize="13sp" />
+</LinearLayout>
