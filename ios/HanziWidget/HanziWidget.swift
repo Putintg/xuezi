@@ -22,17 +22,38 @@ struct HanziEntry: TimelineEntry {
   let word: HanziWord
 }
 
+/// Запись словаря words.json, встроенного в виджет.
+private struct DictEntry: Decodable {
+  let h: String
+  let p: String
+  let ru: String
+  let l: Int
+}
+
+/// Запасной вариант без App Group (например, при бесплатном Apple ID):
+/// слова HSK 1–2 из словаря, встроенного в сам виджет.
+private func bundledWords() -> [HanziWord] {
+  guard
+    let url = Bundle.main.url(forResource: "words", withExtension: "json"),
+    let data = try? Data(contentsOf: url),
+    let all = try? JSONDecoder().decode([DictEntry].self, from: data)
+  else { return [HanziWord.placeholder] }
+  let words = all.filter { $0.l <= 2 }.map { HanziWord(h: $0.h, p: $0.p, m: $0.ru) }
+  return words.isEmpty ? [HanziWord.placeholder] : words
+}
+
 /// Слова из приложения и длина слота в минутах.
 private func loadRotation() -> ([HanziWord], Int) {
   let defaults = UserDefaults(suiteName: appGroup)
-  let slot = max(defaults?.integer(forKey: "slotMinutes") ?? 0, 0)
+  let saved = defaults?.integer(forKey: "slotMinutes") ?? 0
+  let slot = saved > 0 ? saved : 120
   guard
     let raw = defaults?.string(forKey: "rotation"),
     let data = raw.data(using: .utf8),
     let words = try? JSONDecoder().decode([HanziWord].self, from: data),
     !words.isEmpty
-  else { return ([HanziWord.placeholder], slot == 0 ? 120 : slot) }
-  return (words, slot == 0 ? 120 : slot)
+  else { return (bundledWords(), slot) }
+  return (words, slot)
 }
 
 /// Слово для момента времени: тот же расчёт, что в Android-виджете.

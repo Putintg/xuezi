@@ -19,6 +19,7 @@
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
+		CC1C811B4F2378E406BCC1AF /* words.json in Resources */ = {isa = PBXBuildFile; fileRef = 89C1413C7249631B5F7A88B4 /* words.json */; };
 		D01D548A174F7F06A97123DE /* HanziWidget.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = EA620B6F7651048EA180970B /* HanziWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		FF812DAE0D53291CC6494DB3 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 111BEEB40D94F4E3C4A40DF7 /* SwiftUI.framework */; };
 /* End PBXBuildFile section */
@@ -79,6 +80,7 @@
 		7884E8672EC3CC0400C636F2 /* SceneDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SceneDelegate.swift; sourceTree = "<group>"; };
 		78E0A7A72DC9AD7400C4905E /* FlutterGeneratedPluginSwiftPackage */ = {isa = PBXFileReference; lastKnownFileType = wrapper; name = FlutterGeneratedPluginSwiftPackage; path = Flutter/ephemeral/Packages/FlutterGeneratedPluginSwiftPackage; sourceTree = "<group>"; };
 		7AFA3C8E1D35360C0083082E /* Release.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Release.xcconfig; path = Flutter/Release.xcconfig; sourceTree = "<group>"; };
+		89C1413C7249631B5F7A88B4 /* words.json */ = {isa = PBXFileReference; includeInIndex = 1; name = words.json; path = ../../assets/words.json; sourceTree = "<group>"; };
 		9740EEB21CF90195004384FC /* Debug.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Debug.xcconfig; path = Flutter/Debug.xcconfig; sourceTree = "<group>"; };
 		9740EEB31CF90195004384FC /* Generated.xcconfig */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.xcconfig; name = Generated.xcconfig; path = Flutter/Generated.xcconfig; sourceTree = "<group>"; };
 		97C146EE1CF9000F007C117D /* Runner.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Runner.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -136,6 +138,7 @@
 				CE5EB542AE93EDA642586A45 /* HanziWidget.swift */,
 				F970F4B0B11838AF3599A134 /* Info.plist */,
 				1E17265E7FA4279FF8766B8E /* HanziWidget.entitlements */,
+				89C1413C7249631B5F7A88B4 /* words.json */,
 			);
 			name = HanziWidget;
 			path = HanziWidget;
@@ -330,6 +333,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CC1C811B4F2378E406BCC1AF /* words.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
