@@ -19,6 +19,13 @@ class AppState extends ChangeNotifier {
   List<Word> words = [];
   List<Lesson> lessons = [];
   Set<String> completedLessons = {};
+  String _lessonDay = '';
+  int _extraNew = 0;
+
+  /// Домашнее задание: иероглифы для прописей и сколько раз каждый.
+  List<String> homeworkChars = [];
+  int homeworkRepeats = 3;
+  Map<String, int> homeworkDone = {};
   final Map<String, Word> _byHanzi = {};
   final Map<int, CardState> cards = {};
 
@@ -40,9 +47,13 @@ class AppState extends ChangeNotifier {
   /// Вызывается после изменений, которые должны попасть на экран блокировки.
   VoidCallback? onLockscreenDataChanged;
 
+  /// Последнее загруженное состояние — для экранов, открытых из листов.
+  static AppState? current;
+
   static Future<AppState> load() async {
     final prefs = await SharedPreferences.getInstance();
     final s = AppState(prefs);
+    current = s;
     final raw = await rootBundle.loadString('assets/words.json');
     final list = jsonDecode(raw) as List;
     s.words = [
@@ -71,6 +82,15 @@ class AppState extends ChangeNotifier {
     dailyNew = _prefs.getInt('dailyNew') ?? 5;
     studyDays = (_prefs.getStringList('studyDays') ?? []).toSet();
     completedLessons = (_prefs.getStringList('lessonsDone') ?? []).toSet();
+    _lessonDay = _prefs.getString('lessonDay') ?? '';
+    final hw = _prefs.getString('homework');
+    if (hw != null) {
+      final j = jsonDecode(hw) as Map<String, dynamic>;
+      homeworkChars = [for (final c in j['chars'] as List) c as String];
+      homeworkRepeats = j['n'] as int;
+      homeworkDone = (j['done'] as Map<String, dynamic>)
+          .map((k, v) => MapEntry(k, v as int));
+    }
     lockEnabled = _prefs.getBool('lockEnabled') ?? true;
     lockEveryMinutes = _prefs.getInt('lockEvery') ?? 120;
     lockStartHour = _prefs.getInt('lockStart') ?? 9;
@@ -92,6 +112,7 @@ class AppState extends ChangeNotifier {
       _newTodayKey = dayKey(now);
       _newToday = 0;
       reviewedToday = 0;
+      _extraNew = 0;
     }
   }
 
@@ -162,7 +183,14 @@ class AppState extends ChangeNotifier {
     return due;
   }
 
-  int get newLeftToday => (dailyNew - _newToday).clamp(0, dailyNew);
+  int get newLeftToday =>
+      (dailyNew + _extraNew - _newToday).clamp(0, dailyNew + _extraNew);
+
+  /// «Ещё слова» после дневного лимита.
+  void addExtraNew(int n) {
+    _extraNew += n;
+    notifyListeners();
+  }
 
   /// Очередь на сейчас: сначала повторения, потом новые слова на сегодня.
   List<Word> sessionQueue(DateTime now) {
@@ -239,11 +267,57 @@ class AppState extends ChangeNotifier {
     }
     completedLessons.add(l.key);
     studyDays.add(dayKey(now));
+    _lessonDay = dayKey(now);
+    await _prefs.setString('lessonDay', _lessonDay);
     await _prefs.setStringList('lessonsDone', completedLessons.toList());
+    // Домашнее задание: прописать иероглифы урока.
+    final chars = <String>[];
+    for (final h in l.words) {
+      for (final c in h.split('')) {
+        if (!chars.contains(c)) chars.add(c);
+      }
+    }
+    homeworkChars = chars.take(10).toList();
+    homeworkDone = {};
+    await _saveHomework();
     await _save();
     notifyListeners();
     onLockscreenDataChanged?.call();
   }
+
+  /// Следующий непройденный урок.
+  Lesson? get nextLesson {
+    for (final l in lessons) {
+      if (!completedLessons.contains(l.key)) return l;
+    }
+    return null;
+  }
+
+  bool get lessonDoneToday => _lessonDay == dayKey(DateTime.now());
+
+  bool get homeworkComplete => homeworkChars
+      .every((c) => (homeworkDone[c] ?? 0) >= homeworkRepeats);
+
+  Future<void> markWritten(String c) async {
+    if (!homeworkChars.contains(c)) return;
+    homeworkDone[c] = (homeworkDone[c] ?? 0) + 1;
+    studyDays.add(dayKey(DateTime.now()));
+    await _saveHomework();
+    await _save();
+    notifyListeners();
+  }
+
+  Future<void> _saveHomework() => _prefs.setString(
+      'homework',
+      jsonEncode({
+        'chars': homeworkChars,
+        'n': homeworkRepeats,
+        'done': homeworkDone,
+      }));
+
+  /// Изученные слова — для дополнительной практики.
+  List<Word> get learnedWords =>
+      words.where((w) => cards[w.id]?.isLearned ?? false).toList();
 
   // ---------- Статистика ----------
 

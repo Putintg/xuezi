@@ -1,6 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../data/word.dart';
+import '../hanzi/hanzi_data.dart';
+import '../hanzi/stroke_view.dart';
+import '../state/app_state.dart';
+import 'writing_screen.dart';
 import '../services/speech.dart';
 import 'theme.dart';
 
@@ -159,8 +163,127 @@ void showWordSheet(BuildContext context, Word w) {
     builder: (_) => SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: SingleChildScrollView(child: WordDetails(w)),
+        child: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              WordDetails(w),
+              const SizedBox(height: 16),
+              CharacterBreakdown(w.hanzi),
+            ],
+          ),
+        ),
       ),
     ),
   );
+}
+
+/// Разбор каждого иероглифа слова: порядок черт и из чего он состоит.
+class CharacterBreakdown extends StatefulWidget {
+  const CharacterBreakdown(this.text, {super.key});
+  final String text;
+
+  @override
+  State<CharacterBreakdown> createState() => _CharacterBreakdownState();
+}
+
+class _CharacterBreakdownState extends State<CharacterBreakdown> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    HanziData.ensureLoaded().then((_) {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_ready) return const SizedBox.shrink();
+    final chars = <String>[];
+    for (final c in widget.text.split('')) {
+      if (HanziData.strokes(c) != null && !chars.contains(c)) chars.add(c);
+    }
+    if (chars.isEmpty) return const SizedBox.shrink();
+    final t = Theme.of(context).textTheme;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Divider(),
+        const SizedBox(height: 8),
+        Text('Как писать и из чего состоит', style: t.titleMedium),
+        const SizedBox(height: 8),
+        for (final c in chars) _charRow(context, c, t),
+      ],
+    );
+  }
+
+  Widget _charRow(BuildContext context, String c, TextTheme t) {
+    final parts = HanziData.parts(c);
+    final muted = Theme.of(context).colorScheme.onSurfaceVariant;
+    String label(String p) {
+      final m = HanziData.meaning(p);
+      return m == null ? p : '$p  $m';
+    }
+
+    final comps = parts?.parts ?? const <String>[];
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 16),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          StrokeOrderView(c, size: 120),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Черт: ${HanziData.strokes(c)!.count}',
+                    style: t.bodySmall?.copyWith(color: muted)),
+                const SizedBox(height: 6),
+                if (comps.isNotEmpty) ...[
+                  Text('Состоит из:', style: t.bodySmall?.copyWith(color: muted)),
+                  const SizedBox(height: 4),
+                  Wrap(
+                    spacing: 6,
+                    runSpacing: 6,
+                    children: [
+                      for (final p in comps)
+                        Chip(
+                          visualDensity: VisualDensity.compact,
+                          label: Text(label(p)),
+                        ),
+                    ],
+                  ),
+                ],
+                if (parts?.semantic != null && parts!.semantic!.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text(
+                    'Смысл подсказывает ${parts.semantic}'
+                    '${parts.phonetic != null && parts.phonetic!.isNotEmpty ? ', звучание: ${parts.phonetic}' : ''}',
+                    style: t.bodySmall,
+                  ),
+                ] else if (parts != null && parts.radical.isNotEmpty) ...[
+                  const SizedBox(height: 6),
+                  Text('Ключ: ${label(parts.radical)}', style: t.bodySmall),
+                ],
+                const SizedBox(height: 4),
+                TextButton.icon(
+                  style: TextButton.styleFrom(padding: EdgeInsets.zero),
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('Прописать'),
+                  onPressed: AppState.current == null
+                      ? null
+                      : () => Navigator.of(context).push(MaterialPageRoute(
+                          builder: (_) => WritingScreen(
+                              state: AppState.current!, chars: [c]))),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }

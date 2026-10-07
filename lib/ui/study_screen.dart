@@ -9,8 +9,11 @@ import 'word_card.dart';
 
 /// Занятие: карточки из очереди повторений и новых слов.
 class StudyScreen extends StatefulWidget {
-  const StudyScreen({super.key, required this.state});
+  const StudyScreen({super.key, required this.state, this.practice});
   final AppState state;
+
+  /// Свободное повторение этих слов: расписание повторений не меняется.
+  final List<Word>? practice;
 
   @override
   State<StudyScreen> createState() => _StudyScreenState();
@@ -25,7 +28,9 @@ class _StudyScreenState extends State<StudyScreen> {
   @override
   void initState() {
     super.initState();
-    _queue = widget.state.sessionQueue(DateTime.now());
+    _queue = widget.practice != null
+        ? [...widget.practice!]
+        : widget.state.sessionQueue(DateTime.now());
     _total = _queue.length;
   }
 
@@ -49,7 +54,7 @@ class _StudyScreenState extends State<StudyScreen> {
 
   Future<void> _answer(Grade g) async {
     final w = _queue.removeAt(0);
-    await widget.state.answer(w, g);
+    if (widget.practice == null) await widget.state.answer(w, g);
     setState(() {
       if (g == Grade.again) {
         _queue.add(w); // вернётся в конце занятия
@@ -65,7 +70,7 @@ class _StudyScreenState extends State<StudyScreen> {
     final t = Theme.of(context).textTheme;
     return Scaffold(
       appBar: AppBar(
-        title: Text('Занятие'),
+        title: Text(widget.practice != null ? 'Повторение' : 'Занятие'),
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(4),
           child: LinearProgressIndicator(
@@ -152,7 +157,8 @@ class _StudyScreenState extends State<StudyScreen> {
                             onPressed: () => _answer(g),
                             child: Column(children: [
                               Text(label),
-                              Text(_preview(w, g), style: t.labelSmall),
+                              if (widget.practice == null)
+                                Text(_preview(w, g), style: t.labelSmall),
                             ]),
                           ),
                         ),

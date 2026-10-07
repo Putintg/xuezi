@@ -81,7 +81,9 @@ class _ExerciseRunnerState extends State<ExerciseRunner> {
           ),
         ),
         if (_correct != null) _feedback(e, t),
-        Padding(
+        // Для выбора варианта кнопка нужна только после ответа.
+        if (_correct != null || e is BuildSentence)
+          Padding(
           padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
           child: FilledButton(
             style: FilledButton.styleFrom(

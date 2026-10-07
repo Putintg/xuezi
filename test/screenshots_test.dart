@@ -7,12 +7,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:xuezi/hanzi/hanzi_data.dart';
 import 'package:xuezi/main.dart';
 import 'package:xuezi/srs/srs.dart';
 import 'package:xuezi/state/app_state.dart';
 import 'package:xuezi/ui/settings_screen.dart';
 import 'package:xuezi/ui/study_screen.dart';
+import 'package:xuezi/ui/lesson_screen.dart';
 import 'package:xuezi/ui/theme.dart';
+import 'package:xuezi/ui/word_card.dart';
+import 'package:xuezi/ui/writing_screen.dart';
 
 Future<void> _font(String family, List<String> paths) async {
   final loader = FontLoader(family);
@@ -43,6 +47,7 @@ void main() {
     tester.view.devicePixelRatio = 2.75;
     addTearDown(tester.view.reset);
     SharedPreferences.setMockInitialValues(prefs);
+    await tester.runAsync(HanziData.ensureLoaded);
     return (await tester.runAsync(AppState.load))!;
   }
 
@@ -105,5 +110,53 @@ void main() {
         home: SettingsScreen(state: s)));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/7_settings.png'));
+  });
+
+  Widget app(Widget home) => MaterialApp(
+      debugShowCheckedModeBanner: false,
+      theme: buildTheme(Brightness.light),
+      home: home);
+
+  testWidgets('lessons', (tester) async {
+    final s = await setup(tester, {'onboarded': true});
+    await tester.pumpWidget(XueziApp(state: s));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Уроки').last);
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(XueziApp), matchesGoldenFile('screenshots/8_lessons.png'));
+
+    await tester.pumpWidget(app(LessonScreen(state: s, lesson: s.lessons.first)));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Дальше'));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/9_grammar.png'));
+    await tester.tap(find.text('Дальше'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text(s.lessons.first.dialogue[1].zh).first);
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/10_dialogue.png'));
+    await tester.tap(find.text('Дальше'));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/11_exercise.png'));
+  });
+
+  testWidgets('writing and breakdown', (tester) async {
+    final s = await setup(tester, {'onboarded': true});
+    await tester.pumpWidget(app(WritingScreen(state: s, chars: ['好'])));
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/12_writing.png'));
+
+    await tester.pumpWidget(app(Builder(builder: (context) => Scaffold(
+          body: TextButton(
+              onPressed: () => showWordSheet(context, s.wordByHanzi('汉语')!),
+              child: const Text('open')),
+        ))));
+    await tester.tap(find.text('open'));
+    await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
+    await tester.pumpAndSettle();
+    await tester.drag(find.byType(SingleChildScrollView).last, const Offset(0, -500));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/13_breakdown.png'));
   });
 }

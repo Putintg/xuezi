@@ -25,3 +25,4 @@ flutter:
   assets:
     - assets/words.json
     - assets/lessons/
+    - assets/hanzi/

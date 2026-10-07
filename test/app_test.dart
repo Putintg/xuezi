@@ -17,7 +17,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Иероглиф дня'), findsOneWidget);
-    expect(find.textContaining('Начать занятие'), findsOneWidget);
+    expect(find.text('План на сегодня'), findsOneWidget);
+    expect(find.text('Урок 1: Знакомство'), findsOneWidget);
+    expect(find.textContaining('Повторение ·'), findsOneWidget);
     expect(find.text(state.wordOfTheDay(DateTime.now()).hanzi),
         findsWidgets);
   });
