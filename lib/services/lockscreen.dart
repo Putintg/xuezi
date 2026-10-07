@@ -18,12 +18,19 @@ class Lockscreen {
   static const _androidWidget = 'HanziWidgetProvider';
   static const _iosWidget = 'HanziWidget';
   static const _daysAhead = 5;
+  // Общая с виджетом группа на iOS; на Android не используется.
+  static const _appGroup = 'group.app.xuezi.xuezi';
+  // iOS хранит не больше 64 запланированных уведомлений.
+  static const _iosMaxPending = 60;
 
   /// Срабатывает при нажатии на уведомление; payload — id слова.
   static void Function(int wordId)? onOpenWord;
 
   static Future<void> init() async {
     if (kIsWeb) return;
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      await HomeWidget.setAppGroupId(_appGroup);
+    }
     tzdata.initializeTimeZones();
     try {
       final info = await FlutterTimezone.getLocalTimezone();
@@ -105,7 +112,11 @@ class Lockscreen {
     await _notifications.cancelAll();
     if (!s.lockEnabled || rotation.isEmpty) return;
 
-    final times = slots(s, DateTime.now());
+    var times = slots(s, DateTime.now());
+    if (defaultTargetPlatform == TargetPlatform.iOS &&
+        times.length > _iosMaxPending) {
+      times = times.take(_iosMaxPending).toList();
+    }
     for (var i = 0; i < times.length; i++) {
       final w = rotation[i % rotation.length];
       await _notifications.zonedSchedule(
