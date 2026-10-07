@@ -1,25 +1,19 @@
 import 'package:flutter/foundation.dart';
-import 'package:flutter_tts/flutter_tts.dart';
+import 'package:flutter/services.dart';
 
-/// Озвучка через синтезатор речи телефона.
+/// Озвучка через синтезатор речи телефона (нативный код в MainActivity и
+/// AppDelegate, без сторонних плагинов).
 class Speech {
   Speech._();
 
-  static final _tts = FlutterTts();
-  static bool _ready = false;
+  static const _channel = MethodChannel('xuezi/speech');
 
   static Future<void> say(String text) async {
     if (kIsWeb) return;
     try {
-      if (!_ready) {
-        await _tts.setLanguage('zh-CN');
-        await _tts.setSpeechRate(0.4);
-        _ready = true;
-      }
-      await _tts.stop();
-      await _tts.speak(text);
+      await _channel.invokeMethod('speak', {'text': text});
     } catch (e) {
-      debugPrint('TTS failed: $e');
+      debugPrint('Speech failed: $e');
     }
   }
 }
