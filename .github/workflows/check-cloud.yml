@@ -9,6 +9,9 @@ jobs:
         run: |
           URL=$(grep -o "https://[a-z0-9]*\.supabase\.co" lib/services/cloud_config.dart)
           KEY=$(grep -o "sb_publishable_[A-Za-z0-9_]*" lib/services/cloud_config.dart)
-          echo "== table"; curl -sS "$URL/rest/v1/progress?select=user_id&limit=1" -H "apikey: $KEY" -w "\nHTTP %{http_code}\n"
-          echo "== auth settings"; curl -sS "$URL/auth/v1/settings" -H "apikey: $KEY"; echo
-          echo "== wrong login"; curl -sS -X POST "$URL/auth/v1/token?grant_type=password" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{"email":"nobody-check@example.com","password":"wrongpass1"}' -w "\nHTTP %{http_code}\n"
+          T=$(curl -sS "$URL/rest/v1/progress?select=user_id&limit=1" -H "apikey: $KEY" -w " HTTP %{http_code}")
+          echo "::notice title=table::$T"
+          S=$(curl -sS "$URL/auth/v1/settings" -H "apikey: $KEY" | head -c 900)
+          echo "::notice title=auth settings::$S"
+          L=$(curl -sS -X POST "$URL/auth/v1/token?grant_type=password" -H "apikey: $KEY" -H "Content-Type: application/json" -d '{"email":"nobody-check@example.com","password":"wrongpass1"}' -w " HTTP %{http_code}")
+          echo "::notice title=wrong login::$L"
