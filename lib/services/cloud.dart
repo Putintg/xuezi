@@ -123,6 +123,9 @@ class Cloud extends ChangeNotifier {
     if (code == 'validation_failed' || msg.contains('invalid format')) {
       return 'Проверьте адрес почты.';
     }
+    if (code == 'email_provider_disabled' || code == 'signup_disabled') {
+      return 'Вход по почте пока выключен на сервере.';
+    }
     if (code == 'over_email_send_rate_limit' || code == 'over_request_rate_limit') {
       return 'Слишком много попыток. Подождите минуту.';
     }
