@@ -1,5 +1,8 @@
 import 'package:flutter/material.dart';
 
+import 'package:shared_preferences/shared_preferences.dart';
+
+import 'services/cloud.dart';
 import 'services/lockscreen.dart';
 import 'state/app_state.dart';
 import 'ui/dictionary_screen.dart';
@@ -16,6 +19,9 @@ final _navigator = GlobalKey<NavigatorState>();
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   final state = await AppState.load();
+  final cloud = Cloud(await SharedPreferences.getInstance(), state);
+  Cloud.instance = cloud;
+  if (cloud.configured) cloud.start();
   await Lockscreen.init();
   state.onLockscreenDataChanged = () => Lockscreen.refresh(state);
   void open(String hanzi) {
@@ -87,6 +93,9 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
     if (s == AppLifecycleState.resumed) {
       setState(() {});
       Lockscreen.refresh(widget.state);
+      Cloud.instance?.pull();
+    } else if (s == AppLifecycleState.paused) {
+      Cloud.instance?.flush();
     }
   }
 

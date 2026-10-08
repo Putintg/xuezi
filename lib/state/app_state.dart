@@ -76,6 +76,56 @@ class AppState extends ChangeNotifier {
     return s;
   }
 
+  // ---------- Резервная копия и синхронизация ----------
+
+  /// Ключи входа в аккаунт в копию не попадают.
+  static bool _syncable(String k) => !k.startsWith('cloud.');
+
+  /// Весь прогресс и настройки одним объектом.
+  Map<String, dynamic> snapshot() => {
+        for (final k in _prefs.getKeys())
+          if (_syncable(k)) k: _prefs.get(k),
+      };
+
+  /// Насколько далеко продвинулся ученик — чтобы выбрать, какую копию взять.
+  static int progressOf(Map<String, dynamic> snap) {
+    var n = 0;
+    final c = snap['cards'];
+    if (c is String) n += (jsonDecode(c) as Map).length;
+    final l = snap['lessonsDone'];
+    if (l is List) n += l.length * 10;
+    return n;
+  }
+
+  int get progress => progressOf(snapshot());
+
+  /// Заменяет прогресс и настройки копией.
+  Future<void> restoreSnapshot(Map<String, dynamic> snap) async {
+    for (final k in _prefs.getKeys().toList()) {
+      if (_syncable(k)) await _prefs.remove(k);
+    }
+    for (final e in snap.entries) {
+      final v = e.value;
+      if (!_syncable(e.key)) continue;
+      if (v is bool) {
+        await _prefs.setBool(e.key, v);
+      } else if (v is int) {
+        await _prefs.setInt(e.key, v);
+      } else if (v is double) {
+        await _prefs.setDouble(e.key, v);
+      } else if (v is String) {
+        await _prefs.setString(e.key, v);
+      } else if (v is List) {
+        await _prefs.setStringList(e.key, [for (final x in v) '$x']);
+      }
+    }
+    homeworkChars = [];
+    homeworkDone = {};
+    _restore();
+    notifyListeners();
+    onLockscreenDataChanged?.call();
+  }
+
   void _restore() {
     onboarded = _prefs.getBool('onboarded') ?? false;
     levels = (_prefs.getStringList('levels') ?? ['1']).map(int.parse).toSet();
@@ -98,10 +148,17 @@ class AppState extends ChangeNotifier {
     _newTodayKey = _prefs.getString('newTodayKey') ?? '';
     _newToday = _prefs.getInt('newToday') ?? 0;
     reviewedToday = _prefs.getInt('reviewedToday') ?? 0;
+    cards.clear();
     final c = _prefs.getString('cards');
     if (c != null) {
       (jsonDecode(c) as Map<String, dynamic>).forEach((k, v) {
-        cards[int.parse(k)] = CardState.fromJson(v as Map<String, dynamic>);
+        // Прогресс хранится по иероглифам, чтобы обновления словаря его не
+        // ломали. Старые версии хранили номер слова в словаре.
+        final legacy = int.tryParse(k);
+        final id = legacy ?? _byHanzi[k]?.id;
+        if (id != null && id < words.length) {
+          cards[id] = CardState.fromJson(v as Map<String, dynamic>);
+        }
       });
     }
     _rollDay(DateTime.now());
@@ -120,7 +177,7 @@ class AppState extends ChangeNotifier {
     await _prefs.setString(
         'cards',
         jsonEncode(
-            cards.map((k, v) => MapEntry(k.toString(), v.toJson()))));
+            cards.map((k, v) => MapEntry(words[k].hanzi, v.toJson()))));
     await _prefs.setStringList('studyDays', studyDays.toList());
     await _prefs.setString('newTodayKey', _newTodayKey);
     await _prefs.setInt('newToday', _newToday);

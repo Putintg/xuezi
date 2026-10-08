@@ -8,9 +8,12 @@ import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:xuezi/hanzi/hanzi_data.dart';
+import 'package:xuezi/hanzi/writing_pad.dart';
 import 'package:xuezi/main.dart';
+import 'package:xuezi/services/cloud.dart';
 import 'package:xuezi/srs/srs.dart';
 import 'package:xuezi/state/app_state.dart';
+import 'package:xuezi/ui/account_screen.dart';
 import 'package:xuezi/ui/settings_screen.dart';
 import 'package:xuezi/ui/study_screen.dart';
 import 'package:xuezi/ui/lesson_screen.dart';
@@ -145,6 +148,22 @@ void main() {
     await tester.pumpWidget(app(WritingScreen(state: s, chars: ['好'])));
     await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
+    // Две черты уже написаны, третья подсвечена подсказкой.
+    final pad = find.byType(WritingPad);
+    final size = tester.getSize(pad).width;
+    final origin = tester.getTopLeft(pad);
+    final st = HanziData.strokes('好')!;
+    for (var i = 0; i < 2; i++) {
+      final pts = resample(st.medians[i], 8);
+      final g = await tester.startGesture(origin + pts.first * (size / 1024));
+      for (final p in pts.skip(1)) {
+        await g.moveTo(origin + p * (size / 1024));
+      }
+      await g.up();
+      await tester.pump();
+    }
+    await tester.tap(find.text('Подсказка'));
+    await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/12_writing.png'));
 
     await tester.pumpWidget(app(Builder(builder: (context) => Scaffold(
@@ -158,5 +177,14 @@ void main() {
     await tester.drag(find.byType(ListView).last, const Offset(0, -500));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/13_breakdown.png'));
+  });
+
+  testWidgets('account', (tester) async {
+    final s = await setup(tester, {'onboarded': true});
+    final cloud = Cloud(await SharedPreferences.getInstance(), s,
+        url: 'https://example.supabase.co', key: 'anon');
+    await tester.pumpWidget(app(AccountScreen(state: s, cloud: cloud)));
+    await tester.pumpAndSettle();
+    await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/14_account.png'));
   });
 }

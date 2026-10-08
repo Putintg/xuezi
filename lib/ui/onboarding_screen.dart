@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../services/cloud.dart';
 import '../services/lockscreen.dart';
 import '../state/app_state.dart';
+import 'account_screen.dart';
 import 'theme.dart';
 
 /// Первый запуск: уровень, темп и разрешение на уведомления.
@@ -57,6 +59,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ],
               ),
             ),
+            if (_page == 0 && (Cloud.instance?.configured ?? false))
+              TextButton(
+                onPressed: () => Navigator.of(context).push(MaterialPageRoute(
+                    builder: (_) => AccountScreen(
+                        state: widget.state, cloud: Cloud.instance))),
+                child: const Text('У меня уже есть аккаунт'),
+              ),
             Padding(
               padding: const EdgeInsets.all(20),
               child: FilledButton(

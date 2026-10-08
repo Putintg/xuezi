@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
+import '../services/cloud.dart';
 import '../services/lockscreen.dart';
 import '../state/app_state.dart';
+import 'account_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key, required this.state});
@@ -22,6 +24,8 @@ class SettingsScreen extends StatelessWidget {
         appBar: AppBar(title: const Text('Настройки')),
         body: ListView(
           children: [
+            const _Header('Аккаунт'),
+            _AccountTile(state: state),
             const _Header('Учёба'),
             ListTile(
               title: const Text('Уровни HSK'),
@@ -137,4 +141,36 @@ class _Header extends StatelessWidget {
                 .titleSmall
                 ?.copyWith(color: Theme.of(context).colorScheme.primary)),
       );
+}
+
+class _AccountTile extends StatelessWidget {
+  const _AccountTile({required this.state});
+  final AppState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = Cloud.instance;
+    void open() => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => AccountScreen(state: state, cloud: c)));
+    if (c == null || !c.configured) {
+      return ListTile(
+        leading: const Icon(Icons.save_outlined),
+        title: const Text('Резервная копия прогресса'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: open,
+      );
+    }
+    return ListenableBuilder(
+      listenable: c,
+      builder: (context, _) => ListTile(
+        leading: Icon(c.signedIn ? Icons.cloud_done_outlined : Icons.account_circle_outlined),
+        title: Text(c.signedIn ? (c.email ?? 'Аккаунт') : 'Войти или создать аккаунт'),
+        subtitle: Text(c.signedIn
+            ? 'Прогресс сохраняется автоматически'
+            : 'Чтобы не потерять прогресс'),
+        trailing: const Icon(Icons.chevron_right),
+        onTap: open,
+      ),
+    );
+  }
 }
