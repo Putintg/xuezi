@@ -155,27 +155,31 @@ class _TapRevealCardState extends State<TapRevealCard> {
       );
 }
 
-void showWordSheet(BuildContext context, Word w) {
-  showModalBottomSheet(
-    context: context,
-    isScrollControlled: true,
-    showDragHandle: true,
-    builder: (_) => SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(24, 0, 24, 24),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+/// Открывает отдельный экран слова с кнопкой «Назад».
+Future<void> openWord(BuildContext context, Word w) =>
+    Navigator.of(context).push(MaterialPageRoute(builder: (_) => WordScreen(w)));
+
+class WordScreen extends StatelessWidget {
+  const WordScreen(this.word, {super.key});
+  final Word word;
+
+  @override
+  Widget build(BuildContext context) => Scaffold(
+        appBar: AppBar(
+          leading: const BackButton(),
+          title: Text('HSK ${word.level}'),
+        ),
+        body: SafeArea(
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 8, 24, 24),
             children: [
-              WordDetails(w),
+              WordDetails(word),
               const SizedBox(height: 16),
-              CharacterBreakdown(w.hanzi),
+              CharacterBreakdown(word.hanzi),
             ],
           ),
         ),
-      ),
-    ),
-  );
+      );
 }
 
 /// Разбор каждого иероглифа слова: порядок черт и из чего он состоит.

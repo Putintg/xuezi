@@ -149,13 +149,13 @@ void main() {
 
     await tester.pumpWidget(app(Builder(builder: (context) => Scaffold(
           body: TextButton(
-              onPressed: () => showWordSheet(context, s.wordByHanzi('汉语')!),
+              onPressed: () => openWord(context, s.wordByHanzi('汉语')!),
               child: const Text('open')),
         ))));
     await tester.tap(find.text('open'));
     await tester.runAsync(() => Future.delayed(const Duration(milliseconds: 300)));
     await tester.pumpAndSettle();
-    await tester.drag(find.byType(SingleChildScrollView).last, const Offset(0, -500));
+    await tester.drag(find.byType(ListView).last, const Offset(0, -500));
     await tester.pumpAndSettle();
     await expectLater(find.byType(MaterialApp), matchesGoldenFile('screenshots/13_breakdown.png'));
   });

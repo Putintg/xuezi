@@ -75,7 +75,7 @@ class _DictionaryScreenState extends State<DictionaryScreen> {
                             : Icons.timelapse_rounded,
                         color: c.isMature ? Palette.jade : Palette.level(3),
                         size: 20),
-                onTap: () => showWordSheet(context, w),
+                onTap: () => openWord(context, w),
               );
             },
           ),

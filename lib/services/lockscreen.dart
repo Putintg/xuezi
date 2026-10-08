@@ -23,8 +23,24 @@ class Lockscreen {
   // iOS хранит не больше 64 запланированных уведомлений.
   static const _iosMaxPending = 60;
 
-  /// Срабатывает при нажатии на уведомление; payload — id слова.
-  static void Function(int wordId)? onOpenWord;
+  /// Срабатывает при нажатии на уведомление; payload — иероглифы слова.
+  static void Function(String hanzi)? onOpenWord;
+
+  /// Слово из уведомления или виджета, которым запустили закрытое приложение.
+  static Future<String?> launchWord() async {
+    if (kIsWeb) return null;
+    try {
+      final h = _wordFromUri(await HomeWidget.initiallyLaunchedFromHomeWidget());
+      if (h != null) return h;
+    } catch (_) {}
+    try {
+      final d = await _notifications.getNotificationAppLaunchDetails();
+      if (d?.didNotificationLaunchApp ?? false) {
+        return d!.notificationResponse?.payload;
+      }
+    } catch (_) {}
+    return null;
+  }
 
   static Future<void> init() async {
     if (kIsWeb) return;
@@ -48,10 +64,20 @@ class Lockscreen {
         ),
       ),
       onDidReceiveNotificationResponse: (r) {
-        final id = int.tryParse(r.payload ?? '');
-        if (id != null) onOpenWord?.call(id);
+        final h = r.payload;
+        if (h != null && h.isNotEmpty) onOpenWord?.call(h);
       },
     );
+    // Нажатие на виджет, когда приложение уже запущено.
+    HomeWidget.widgetClicked.listen((uri) {
+      final h = _wordFromUri(uri);
+      if (h != null) onOpenWord?.call(h);
+    }, onError: (_) {});
+  }
+
+  static String? _wordFromUri(Uri? uri) {
+    final h = uri?.queryParameters['h'];
+    return h == null || h.isEmpty ? null : h;
   }
 
   /// Запрашивает разрешение на уведомления (Android 13+, iOS).
@@ -127,7 +153,7 @@ class Lockscreen {
         notificationDetails: _details,
         // Неточные будильники не требуют спецразрешения и экономят батарею.
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
-        payload: '${w.id}',
+        payload: w.hanzi,
       );
     }
   }
@@ -140,7 +166,7 @@ class Lockscreen {
       title: _title(w),
       body: _body(w),
       notificationDetails: _details,
-      payload: '${w.id}',
+      payload: w.hanzi,
     );
   }
 

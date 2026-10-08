@@ -18,13 +18,21 @@ Future<void> main() async {
   final state = await AppState.load();
   await Lockscreen.init();
   state.onLockscreenDataChanged = () => Lockscreen.refresh(state);
-  Lockscreen.onOpenWord = (id) {
-    final ctx = _navigator.currentContext;
-    if (ctx != null && id < state.words.length) {
-      showWordSheet(ctx, state.words[id]);
-    }
-  };
+  void open(String hanzi) {
+    final w = state.wordByHanzi(hanzi);
+    final nav = _navigator.currentState;
+    if (w == null || nav == null || !state.onboarded) return;
+    // Сразу к слову из уведомления, поверх главного экрана.
+    nav.popUntil((r) => r.isFirst);
+    nav.push(MaterialPageRoute(builder: (_) => WordScreen(w)));
+  }
+
+  Lockscreen.onOpenWord = open;
+  final launch = await Lockscreen.launchWord();
   runApp(XueziApp(state: state));
+  if (launch != null) {
+    WidgetsBinding.instance.addPostFrameCallback((_) => open(launch));
+  }
   if (state.onboarded) Lockscreen.refresh(state);
 }
 

@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 
 import '../hanzi/hanzi_data.dart';
@@ -30,7 +32,14 @@ class _WritingScreenState extends State<WritingScreen> {
   int _char = 0;
   int _round = 0;
   int? _lastMistakes;
-  int _padKey = 0;
+  int _stroke = 0;
+  int _strokes = 0;
+  GlobalKey<WritingPadState> _pad = GlobalKey();
+
+  void _restart() => setState(() {
+        _pad = GlobalKey();
+        _stroke = 0;
+      });
 
   @override
   void initState() {
@@ -54,7 +63,8 @@ class _WritingScreenState extends State<WritingScreen> {
 
   void _next() => setState(() {
         _lastMistakes = null;
-        _padKey++;
+        _pad = GlobalKey();
+        _stroke = 0;
         _round++;
         if (_round >= widget.repeats) {
           _round = 0;
@@ -73,82 +83,100 @@ class _WritingScreenState extends State<WritingScreen> {
             : LayoutBuilder(builder: (context, box) {
                 final c = widget.chars[_char];
                 final w = widget.state.wordByHanzi(c);
-                final size = (box.maxWidth - 48).clamp(200.0, 360.0);
+                // Без прокрутки: всё касание принадлежит клетке.
+                final size = min(box.maxWidth - 32, box.maxHeight - 250)
+                    .clamp(200.0, 520.0);
                 final lastRound = _round == widget.repeats - 1;
-                return ListView(
-                  padding: const EdgeInsets.all(24),
-                  children: [
-                    LinearProgressIndicator(
-                      value: (_char * widget.repeats + _round) /
-                          (widget.chars.length * widget.repeats),
-                    ),
-                    const SizedBox(height: 16),
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                  'Иероглиф ${_char + 1} из ${widget.chars.length} · '
-                                  'раз ${_round + 1} из ${widget.repeats}',
-                                  style: t.bodySmall),
-                              if (w != null)
-                                Text('${w.pinyin} — ${w.meaning}',
-                                    style: t.titleMedium,
-                                    maxLines: 2,
-                                    overflow: TextOverflow.ellipsis),
-                              Text(
-                                  lastRound
-                                      ? 'Теперь по памяти, без подсказки'
-                                      : 'Пишите черту за чертой по контуру',
-                                  style: t.bodyMedium?.copyWith(
-                                      color: Palette.cinnabar)),
-                            ],
-                          ),
-                        ),
-                        IconButton.filledTonal(
-                          tooltip: 'Порядок черт',
-                          icon: const Icon(Icons.play_arrow_rounded),
-                          onPressed: () => _showOrder(c),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    Center(
-                      child: WritingPad(
+                return Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+                  child: Column(
+                    children: [
+                      LinearProgressIndicator(
+                        value: (_char * widget.repeats + _round) /
+                            (widget.chars.length * widget.repeats),
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                          'Иероглиф ${_char + 1} из ${widget.chars.length} · '
+                          'раз ${_round + 1} из ${widget.repeats}',
+                          style: t.bodySmall),
+                      if (w != null)
+                        Text('${w.pinyin} — ${w.meaning}',
+                            textAlign: TextAlign.center,
+                            style: t.titleMedium,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis),
+                      const SizedBox(height: 4),
+                      Text(
+                          _lastMistakes != null
+                              ? (_lastMistakes == 0
+                                  ? 'Отлично, без ошибок!'
+                                  : 'Готово. Ошибок: $_lastMistakes')
+                              : lastRound
+                                  ? 'Теперь по памяти, без контура'
+                                  : 'Обведите черту ${_stroke + 1}'
+                                      '${_strokes > 0 ? ' из $_strokes' : ''}',
+                          style: t.bodyMedium?.copyWith(
+                              color: _lastMistakes == 0
+                                  ? Palette.jade
+                                  : Palette.cinnabar)),
+                      const Spacer(),
+                      WritingPad(
                         c,
-                        key: ValueKey('$c-$_padKey'),
+                        key: _pad,
                         size: size,
                         showOutline: !lastRound,
                         onDone: _done,
+                        onProgress: (d, n) => setState(() {
+                          _stroke = d;
+                          _strokes = n;
+                        }),
                       ),
-                    ),
-                    const SizedBox(height: 16),
-                    if (_lastMistakes != null) ...[
-                      Text(
-                        _lastMistakes == 0
-                            ? 'Отлично, без ошибок!'
-                            : 'Готово. Ошибок в чертах: $_lastMistakes',
-                        textAlign: TextAlign.center,
-                        style: t.titleMedium?.copyWith(
-                            color: _lastMistakes == 0
-                                ? Palette.jade
-                                : Palette.level(3)),
-                      ),
-                      const SizedBox(height: 12),
-                      FilledButton(
-                        style: FilledButton.styleFrom(
-                            minimumSize: const Size.fromHeight(52)),
-                        onPressed: _next,
-                        child: const Text('Дальше'),
-                      ),
-                    ] else
-                      TextButton(
-                        onPressed: () => setState(() => _padKey++),
-                        child: const Text('Начать заново'),
-                      ),
-                  ],
+                      const Spacer(),
+                      if (_lastMistakes != null)
+                        FilledButton(
+                          style: FilledButton.styleFrom(
+                              minimumSize: const Size.fromHeight(52)),
+                          onPressed: _next,
+                          child: Text(_round + 1 >= widget.repeats &&
+                                  _char + 1 >= widget.chars.length
+                              ? 'Завершить'
+                              : 'Дальше'),
+                        )
+                      else
+                        Row(
+                          children: [
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(48)),
+                                icon: const Icon(Icons.lightbulb_outline),
+                                label: const Text('Подсказка'),
+                                onPressed: () =>
+                                    _pad.currentState?.showHint(),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: OutlinedButton.icon(
+                                style: OutlinedButton.styleFrom(
+                                    minimumSize: const Size.fromHeight(48)),
+                                icon: const Icon(Icons.play_arrow_rounded),
+                                label: const Text('Как писать'),
+                                onPressed: () => _showOrder(c),
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            IconButton.outlined(
+                              tooltip: 'Начать заново',
+                              icon: const Icon(Icons.refresh_rounded),
+                              onPressed: _restart,
+                            ),
+                          ],
+                        ),
+                    ],
+                  ),
                 );
               }),
       ),

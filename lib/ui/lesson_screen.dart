@@ -93,7 +93,7 @@ class _LessonScreenState extends State<LessonScreen> {
                     icon: const Icon(Icons.volume_up_rounded),
                     onPressed: () => Speech.say(w.hanzi),
                   ),
-                  onTap: w.id >= 0 ? () => showWordSheet(context, w) : null,
+                  onTap: w.id >= 0 ? () => openWord(context, w) : null,
                 ),
               ),
           ],

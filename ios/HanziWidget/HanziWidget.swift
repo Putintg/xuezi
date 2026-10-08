@@ -93,7 +93,20 @@ struct HanziWidgetView: View {
   @Environment(\.widgetFamily) var family
   let entry: HanziEntry
 
+  // Нажатие открывает приложение сразу на этом слове.
+  private var url: URL? {
+    var c = URLComponents()
+    c.scheme = "xuezi"
+    c.host = "word"
+    c.queryItems = [URLQueryItem(name: "homeWidget", value: nil), URLQueryItem(name: "h", value: entry.word.h)]
+    return c.url
+  }
+
   var body: some View {
+    content.widgetURL(url)
+  }
+
+  @ViewBuilder private var content: some View {
     switch family {
     case .accessoryInline:
       Text("\(entry.word.h) \(entry.word.p) · \(entry.word.m)")

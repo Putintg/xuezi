@@ -1,11 +1,11 @@
 package app.xuezi.xuezi
 
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.Context
-import android.content.Intent
 import android.content.SharedPreferences
+import android.net.Uri
 import android.widget.RemoteViews
+import es.antonborri.home_widget.HomeWidgetLaunchIntent
 import es.antonborri.home_widget.HomeWidgetProvider
 import org.json.JSONArray
 
@@ -29,22 +29,22 @@ class HanziWidgetProvider : HomeWidgetProvider() {
         val slotMinutes = widgetData.getInt("slotMinutes", 120).coerceAtLeast(1)
         val slot = System.currentTimeMillis() / 60000L / slotMinutes
 
-        val launch = context.packageManager.getLaunchIntentForPackage(context.packageName)
-            ?: Intent(context, MainActivity::class.java)
-        val pending = PendingIntent.getActivity(
-            context, 0, launch,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
         for (id in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.hanzi_widget)
+            var hanzi = ""
             if (words.length() > 0) {
                 val w = words.getJSONObject((slot % words.length()).toInt())
+                hanzi = w.optString("h")
                 views.setTextViewText(R.id.widget_hanzi, w.optString("h"))
                 views.setTextViewText(R.id.widget_pinyin, w.optString("p"))
                 views.setTextViewText(R.id.widget_meaning, w.optString("m"))
             }
-            views.setOnClickPendingIntent(R.id.widget_root, pending)
+            // Нажатие открывает приложение сразу на этом слове.
+            val uri = Uri.parse("xuezi://word?homeWidget&h=" + Uri.encode(hanzi))
+            views.setOnClickPendingIntent(
+                R.id.widget_root,
+                HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, uri),
+            )
             appWidgetManager.updateAppWidget(id, views)
         }
     }
